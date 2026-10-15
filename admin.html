@@ -85,7 +85,7 @@
       showLogin();
     });
 
-    // 4. Fetch Requests with Delete Option
+   // 4. Fetch Requests with Delete Option
     async function loadAdminRequests() {
       const listContainer = document.getElementById('adminRequestsList');
       const { data, error } = await supabaseClient
@@ -114,8 +114,8 @@
         </div>
       `).join('');
     }
-
-    // 5. Delete Request Function
+    
+    // 6. Delete Request Function
     async function deleteRequest(id) {
       if (!confirm('Are you sure you want to delete this request?')) return;
 
