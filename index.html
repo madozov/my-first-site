@@ -1,86 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Embroidery Journey</title>
-    
-    <!-- STYLES: This section controls how the page looks (colors, fonts, layout) -->
-    <style>
-        body {
-            font-family: 'Georgia', serif;
-            background-color: #e6e6fa;
-            color: #4a3b32;
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .card {
-            background-color: #ffffff;
-            max-width: 600px;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border-top: 6px solid #4682b4;
-        }
-
-        h1 {
-            color: #4682b4;
-            margin-top: 0;
-        }
-
-        h2 {
-            color: #6a5acd;
-            border-bottom: 2px dashed #e8d8c8;
-            padding-bottom: 5px;
-        }
-
-        ul {
-            line-height: 1.8;
-        }
-
-        .highlight {
-            background-color: #f7ede2;
-            padding: 12px;
-            border-left: 4px solid #6a5acd;
-            margin-top: 20px;
-            font-style: italic;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Embroidery Requests</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+    h1 { color: #333; }
+    form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px; }
+    input, textarea, button { padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    button { background: #3ecf8e; color: white; font-weight: bold; border: none; cursor: pointer; }
+    button:hover { background: #34b27b; }
+    .request-card { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 12px; }
+    .request-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+    .request-card p { margin: 0 0 5px 0; color: #555; }
+    .request-card .contact { font-size: 0.85rem; color: #888; }
+  </style>
+  <!-- Load the Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <!-- CONTENT: This section holds the text and structure shown on the page -->
-    <div class="card">
-        <h1>Stitch & Thread Studio 🪡</h1>
-        <p>Welcome to my little corner of the web dedicated to the art of embroidery!!!</p>
+  <h1>Custom Embroidery Request Board 🪡</h1>
+  <p>Have an idea for a custom design? Submit your request below!</p>
 
-        <h2>Essential Supplies</h2>
-        <ul>
-            <li>Wooden hoops in various sizes</li>
-            <li>DMC embroidery floss (all the colors!)</li>
-            <li>Linen and cotton fabric</li>
-            <li>Sharp needles and snips</li>
-        </ul>
+  <!-- Request Submission Form -->
+  <form id="requestForm">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <textarea id="request_details" placeholder="What design or pattern would you like?" rows="3" required></textarea>
+    <input type="text" id="contact_info" placeholder="Contact Info (Email or Phone)" required>
+    <button type="submit">Submit Request</button>
+  </form>
 
-        <h2>Favorite Stitches</h2>
-        <ul>
-            <li><strong>French Knot:</strong> Great for texture and floral centers</li>
-            <li><strong>Satin Stitch:</strong> Smooth and shiny fill stitch</li>
-            <li><strong>Backstitch:</strong> Clean lines for outlines and text</li>
-        </ul>
-	
-<h2>All About Embroidery Hoops</h2>
-        <p><strong>Wooden Hoops:</strong> The classic choice! Great for holding fabric taut while stitching, and they double as a display frame for finished pieces.</p>
-        <p><strong>Plastic & Flexi Hoops:</strong> Excellent for high-tension hold while working on heavy fabrics or detailed patterns.</p>
-        <p><strong>Decorative Frames:</strong> Oval, geometric, or vintage-style frames used specifically to showcase finished embroidery on your wall.</p>
+  <h2>Recent Requests</h2>
+  <div id="requestsList">Loading requests...</div>
 
-        <div class="highlight">
-            "Every stitch is a moment of calm."
+  <script>
+    // 1. Initialize Supabase Connection
+    const SUPABASE_URL = https://rnygezanwpfjnepskryu.supabase.co;
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueWdlemFud3Bmam5lcHNrcnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMzg5MzIsImV4cCI6MjEwNzYxNDkzMn0.RU4ET-Fl1KDstgCn7Oj3XlZFQW66npQr1Tl87fad0n4;
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 2. Fetch and display requests on page load
+    async function loadRequests() {
+      const listContainer = document.getElementById('requestsList');
+      
+      const { data, error } = await supabaseClient
+        .from('requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching requests:', error);
+        listContainer.innerHTML = '<p>Failed to load requests.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        listContainer.innerHTML = '<p>No requests submitted yet. Be the first!</p>';
+        return;
+      }
+
+      // Render requests to HTML
+      listContainer.innerHTML = data.map(req => `
+        <div class="request-card">
+          <h3>${req.name}</h3>
+          <p>${req.request_details}</p>
+          <div class="contact">Contact: ${req.contact_info}</div>
         </div>
-    </div>
+      `).join('');
+    }
 
+    // 3. Handle Form Submission
+    document.getElementById('requestForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const request_details = document.getElementById('request_details').value;
+      const contact_info = document.getElementById('contact_info').value;
+
+      // Insert row into Supabase 'requests' table
+      const { error } = await supabaseClient
+        .from('requests')
+        .insert([{ name, request_details, contact_info }]);
+
+      if (error) {
+        alert('Error submitting request: ' + error.message);
+      } else {
+        // Clear form & reload requests
+        document.getElementById('requestForm').reset();
+        loadRequests();
+      }
+    });
+
+    // Run on load
+    loadRequests();
+  </script>
 </body>
 </html>
